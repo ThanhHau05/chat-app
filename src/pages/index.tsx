@@ -1,9 +1,8 @@
 import { SimpleButton } from "@/components/button";
 import { AuthContext } from "@/context/auth-context";
-import { useSaveInfomationUser } from "@/hooks/useAuth";
 import { Images } from "@/images";
 import Image from "next/image";
-import { useContext, useEffect } from "react";
+import { useContext } from "react";
 import { FcGoogle } from "react-icons/fc";
 import { MdAccountCircle } from "react-icons/md";
 import { Private } from "./layouts/private";
@@ -44,17 +43,11 @@ const _Login = () => {
 };
 
 export default function Home() {
-  const { loggedInUser, loggedloading } = useContext(AuthContext);
-  useEffect(() => {
-    if (loggedInUser) {
-      useSaveInfomationUser(
-        loggedInUser.uid,
-        loggedInUser.displayName ? loggedInUser.displayName : "unknown",
-        loggedInUser.email ? loggedInUser.email : "unknown",
-        loggedInUser.photoURL ? loggedInUser.photoURL : ""
-      );
-    }
-  }, [loggedInUser]);
-  if (!loggedInUser && !loggedloading) return <_Login />;
-  return <Private />;
+  const { loggedInUsers } = useContext(AuthContext);
+
+  if (!loggedInUsers) {
+    return <_Login />;
+  } else {
+    return <Private />;
+  }
 }

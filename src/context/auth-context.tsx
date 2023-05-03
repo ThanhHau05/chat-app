@@ -1,6 +1,12 @@
 import { auth } from "@/firebase";
-import { useGetInfomationUser } from "@/hooks/useAuth";
-import { CustomParameters, User, UserCredential } from "firebase/auth";
+import {
+  useCheckUser,
+  useGetInfomationUser,
+  useSaveInfomationUser,
+  useUpdateLastSeen,
+} from "@/hooks/useAuth";
+import { Images } from "@/images";
+import { CustomParameters, User, UserCredential, signOut } from "firebase/auth";
 import {
   Dispatch,
   ReactNode,
@@ -9,11 +15,7 @@ import {
   useEffect,
   useState,
 } from "react";
-import {
-  useAuthState,
-  useSignInWithGoogle,
-  useSignOut,
-} from "react-firebase-hooks/auth";
+import { useAuthState, useSignInWithGoogle } from "react-firebase-hooks/auth";
 
 interface AuthContextProps {
   signInWithGoogle: (
@@ -22,7 +24,6 @@ interface AuthContextProps {
   ) => Promise<UserCredential | undefined>;
   loggedInUser: User | null | undefined;
   loggedloading: boolean;
-  signOut: () => Promise<boolean>;
   infouser: {
     name: string;
     photoUrl: string;
@@ -35,8 +36,13 @@ interface AuthContextProps {
       username: string;
     }>
   >;
-  loading: boolean;
-  setLoading: Dispatch<SetStateAction<boolean>>;
+  loadingprivate: boolean;
+  setLoadingPrivate: Dispatch<SetStateAction<boolean>>;
+  onSignOut: () => Promise<void>;
+  onpublic: boolean;
+  setOnPublic: Dispatch<SetStateAction<boolean>>;
+  loggedInUsers: User | null;
+  setLoggedInUsers: Dispatch<SetStateAction<User | null>>;
 }
 
 const AuthContext = createContext({} as AuthContextProps);
@@ -45,13 +51,64 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [signInWithGoogle, user, signinloading, signinerror] =
     useSignInWithGoogle(auth);
   const [loggedInUser, loggedloading, loggederror] = useAuthState(auth);
-  const [signOut, signoutloading, error] = useSignOut(auth);
   const [infouser, setInfoUser] = useState({
     name: "",
     photoUrl: "",
     username: "",
   });
-  const [loading, setLoading] = useState(true);
+  const [loadingprivate, setLoadingPrivate] = useState(true);
+  const [onpublic, setOnPublic] = useState(true);
+
+  const [loggedInUsers, setLoggedInUsers] = useState<User | null>(null);
+
+  const onSignOut = async () => {
+    if (loggedInUser) {
+      useUpdateLastSeen(loggedInUser.uid);
+    }
+    setInfoUser({ name: "", photoUrl: "", username: "" });
+    await signOut(auth);
+  };
+
+  useEffect(() => {
+    if (loggedInUser?.uid) {
+      useUpdateLastSeen(loggedInUser.uid);
+    }
+  }, [loggedInUser]);
+
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      setLoadingPrivate(false);
+      setLoggedInUsers(user);
+    });
+
+    return unsubscribe;
+  }, [auth]);
+
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      setOnPublic(false);
+      if (user) {
+        const checkUser = async () => {
+          const users = await useCheckUser(user.uid);
+          if (users) {
+            setLoadingPrivate(true);
+            useSaveInfomationUser(
+              user.uid,
+              user.displayName ? user.displayName : "unknown",
+              user.email ? user.email : "unknown",
+              user.photoURL ? user.photoURL : Images.user
+            ).then(() => {
+              location.reload();
+            });
+          }
+        };
+        checkUser();
+      }
+    });
+
+    return unsubscribe;
+  }, []);
+
   useEffect(() => {
     async function getData() {
       if (loggedInUser?.uid) {
@@ -68,19 +125,19 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
     getData();
   }, [loggedInUser]);
 
-  useEffect(() => {
-    setLoading(loggedloading);
-  }, [loggedloading]);
-
   const value = {
     signInWithGoogle,
     loggedInUser,
     loggedloading,
-    signOut,
+    onSignOut,
     infouser,
     setInfoUser,
-    loading,
-    setLoading,
+    loadingprivate,
+    setLoadingPrivate,
+    setOnPublic,
+    onpublic,
+    loggedInUsers,
+    setLoggedInUsers,
   };
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

@@ -1,9 +1,9 @@
 import { AuthContext, AuthProvider } from "@/context/auth-context";
 import "@/styles/globals.css";
 import type { AppProps } from "next/app";
-import { useContext } from "react";
 
 import { SimpleLoading } from "@/components/loading";
+import { useContext } from "react";
 
 const MyApp = ({ Component, pageProps }: AppProps) => {
   return (
@@ -14,11 +14,11 @@ const MyApp = ({ Component, pageProps }: AppProps) => {
 };
 
 const App = ({ Component, pageProps }: any) => {
-  const { loading } = useContext(AuthContext);
+  const { loadingprivate, infouser } = useContext(AuthContext);
 
   return (
     <div>
-      {loading && <SimpleLoading />}
+      {loadingprivate && !infouser.name && <SimpleLoading />}
       <Component {...pageProps} />
     </div>
   );
