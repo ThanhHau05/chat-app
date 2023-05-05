@@ -5,7 +5,7 @@ import Image from "next/image";
 import { useContext } from "react";
 import { FcGoogle } from "react-icons/fc";
 import { MdAccountCircle } from "react-icons/md";
-import { Private } from "./layouts/private";
+import Private from "./layouts/private/private";
 
 const _Login = () => {
   const { signInWithGoogle } = useContext(AuthContext);

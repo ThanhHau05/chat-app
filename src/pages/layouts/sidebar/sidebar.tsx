@@ -11,13 +11,15 @@ import { IoLogOutOutline } from "react-icons/io5";
 import { IconType } from "react-icons/lib";
 import styles from "../../../styles/globals.module.scss";
 
-export const SideBar = () => {
+const SideBar = () => {
   return (
     <SideBarProvider>
       <_SideBarContainer />
     </SideBarProvider>
   );
 };
+
+export default SideBar;
 
 const _SideBarContainer = () => {
   const { input, setInput, inputRef } = useContext(SideBarContext);
@@ -34,6 +36,16 @@ const _SideBarContainer = () => {
             inputRef={inputRef}
             width="w-full"
           />
+        </div>
+        <div className="py-3">
+          <div className="relative inline-block px-2 py-1 transition-all duration-200 border rounded-full cursor-pointer hover:bg-indigo-400 hover:drop-shadow-lg bg-slate-100 drop-shadow-md group">
+            <h2 className="text-sm drop-shadow-md group-hover:text-white">
+              Message waiting
+            </h2>
+            {/* <span className="absolute flex items-center justify-center -top-2.5 -right-3 w-6 h-6 text-xs font-medium bg-indigo-400 rounded-full drop-shadow-md">
+              1
+            </span> */}
+          </div>
         </div>
       </div>
     </div>

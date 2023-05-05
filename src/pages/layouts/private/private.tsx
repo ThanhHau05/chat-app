@@ -1,7 +1,7 @@
-import { Header } from "../header";
-import { SideBar } from "../sidebar";
+import Header from "../header/header";
+import SideBar from "../sidebar/sidebar";
 
-export const Private = () => {
+const Private = () => {
   return (
     <div className="h-screen bg-white">
       <Header />
@@ -11,3 +11,5 @@ export const Private = () => {
     </div>
   );
 };
+
+export default Private;

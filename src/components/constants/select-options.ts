@@ -7,6 +7,12 @@ export interface InfomationUser {
   userName: string;
 }
 
+export interface InfomationUsersSearch {
+  name: string;
+  photoURL: string;
+  userName: string;
+}
+
 export interface ProfileOptions {
   title: string;
   value: string;
