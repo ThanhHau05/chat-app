@@ -1,14 +1,14 @@
 import { SimpleButton } from "@/components/button";
-import { AuthContext } from "@/context/auth-context";
+import { AppContext } from "@/context/app-context";
 import { Images } from "@/images";
 import Image from "next/image";
 import { useContext } from "react";
 import { FcGoogle } from "react-icons/fc";
 import { MdAccountCircle } from "react-icons/md";
-import Private from "./layouts/private/private";
+import Messages from "./messages/[id]";
 
 const _Login = () => {
-  const { signInWithGoogle } = useContext(AuthContext);
+  const { signInWithGoogle } = useContext(AppContext);
 
   return (
     <div className="flex items-center justify-center h-screen bg-white">
@@ -43,11 +43,11 @@ const _Login = () => {
 };
 
 export default function Home() {
-  const { loggedInUsers } = useContext(AuthContext);
+  const { loggedInUsers } = useContext(AppContext);
 
   if (!loggedInUsers) {
     return <_Login />;
   } else {
-    return <Private />;
+    return <Messages />;
   }
 }

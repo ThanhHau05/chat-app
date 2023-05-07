@@ -2,8 +2,6 @@ import { InfomationUser } from "@/components/constants/select-options";
 import { dbg, myFirebase } from "@/firebase";
 import { Images } from "@/images";
 import {
-  addDoc,
-  collection,
   doc,
   getDoc,
   serverTimestamp,
@@ -12,28 +10,18 @@ import {
 } from "firebase/firestore";
 import { StaticImageData } from "next/image";
 
-export const useSaveUserNameToServer = async (
-  userName: string,
-  name: string,
-  photoURL: string | StaticImageData,
-  email: string
-) => {
-  const docRef = doc(dbg, "usersname", "users list");
+export const useSaveUserNameToServer = async (userName: string) => {
+  const docRef = doc(dbg, "usersName", "usersName list");
   const getRef = await getDoc(docRef);
   if (getRef.exists()) {
     await updateDoc(docRef, {
-      username: myFirebase.firestore.FieldValue.arrayUnion({
-        userName,
-        name,
-        photoURL,
-        email,
-      }),
+      usersname: myFirebase.firestore.FieldValue.arrayUnion(userName),
     });
   } else {
     setDoc(
       docRef,
       {
-        username: [{ userName, name, photoURL, email }],
+        usersname: [userName],
       },
       { merge: true }
     );
@@ -44,9 +32,30 @@ export const useAddConVersation = async (
   email: string,
   recipientEmail: string
 ) => {
-  await addDoc(collection(dbg, "conversations", email), {
-    users: [email, recipientEmail],
-  });
+  const docRef = doc(dbg, "conversations", email);
+  const getRef = await getDoc(docRef);
+  if (
+    getRef.exists() &&
+    !(getRef.data().users as string[]).includes(recipientEmail)
+  ) {
+    updateDoc(docRef, {
+      users: [...getRef.data().users, recipientEmail],
+    });
+  } else if (!getRef.exists()) {
+    await setDoc(docRef, {
+      users: [recipientEmail],
+    });
+  }
+};
+
+export const useGetUsersConversations = async (email: string) => {
+  const docRef = await getDoc(doc(dbg, "conversations", email));
+  if (docRef.exists()) {
+    const usersArray = docRef.data()?.users;
+    return usersArray;
+  } else {
+    return null;
+  }
 };
 
 export const useUpdateLastSeen = async (uid: string) => {
@@ -56,9 +65,9 @@ export const useUpdateLastSeen = async (uid: string) => {
 };
 
 export const useGetUserNameList = async () => {
-  const docRef = await getDoc(doc(dbg, "usersname", "users list"));
+  const docRef = await getDoc(doc(dbg, "usersName", "usersName list"));
   if (docRef.exists()) {
-    const usersArray = docRef.data()?.username;
+    const usersArray = docRef.data()?.usersname;
     return usersArray;
   } else {
     return null;
@@ -83,10 +92,11 @@ export const useSaveInfomationUser = async (
   const docRef = doc(dbg, "users", uid);
   const getRef = await getDoc(docRef);
   if (!getRef.exists()) {
-    const username = await useCreateUserName();
+    const { username, id } = await useCreateUserNameAndID();
     await setDoc(
       docRef,
       {
+        id: id,
         name: displayName,
         email: email,
         photoURL: photoURL ? photoURL : Images.user,
@@ -95,11 +105,11 @@ export const useSaveInfomationUser = async (
       },
       { merge: true }
     );
-    await useSaveUserNameToServer(username, displayName, photoURL, email);
+    await useSaveUserNameToServer(username);
   }
 };
 
-export const useCreateUserName = async () => {
+export const useCreateUserNameAndID = async () => {
   let number = 1;
   const currentDate = new Date();
   let day = currentDate.getDate().toString();
@@ -107,9 +117,9 @@ export const useCreateUserName = async () => {
   month = +month < 10 ? 0 + month : month;
   day = +day < 10 ? 0 + day : day;
 
-  const docRef = doc(dbg, "usersname", "users number");
+  const docRef = doc(dbg, "usersName", "users number");
   const numberRef = await getDoc(docRef);
-  const listRef = await getDoc(doc(dbg, "usersname", "users list"));
+  const listRef = await getDoc(doc(dbg, "usersName", "usersName list"));
   if (numberRef.exists()) {
     number = numberRef.data()?.usernumber + 1;
     await updateDoc(docRef, {
@@ -121,8 +131,9 @@ export const useCreateUserName = async () => {
     });
   }
   let username = `user_${day}${month}${number}`;
+  const id = `${day}${month}${number}`;
   if (listRef.exists()) {
-    const usersArray: string[] = listRef.data()?.username;
+    const usersArray: string[] = listRef.data()?.usersname;
     while (usersArray.includes(username)) {
       const index = username.match(/\d+$/);
       if (index) {
@@ -131,7 +142,7 @@ export const useCreateUserName = async () => {
       }
     }
   }
-  return username;
+  return { username, id };
 };
 
 export const useGetInfomationUser = async (uid: string) => {

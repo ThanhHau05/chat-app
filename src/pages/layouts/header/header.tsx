@@ -1,9 +1,9 @@
 import { SimpleInput } from "@/components/input";
-import { AuthContext } from "@/context/auth-context";
 import { HeaderContext, HeaderProvider } from "@/context/header-context";
 import { Images } from "@/images";
 import clsx from "clsx";
 import Image from "next/image";
+import { useRouter } from "next/router";
 import { useContext } from "react";
 import { AiOutlineLoading3Quarters } from "react-icons/ai";
 import { BiMessageRoundedAdd } from "react-icons/bi";
@@ -18,7 +18,6 @@ const Header = () => {
 };
 
 const HeaderContainer = () => {
-  const { loggedInUser } = useContext(AuthContext);
   const {
     setValueSearch,
     valuesearch,
@@ -30,9 +29,16 @@ const HeaderContainer = () => {
     onFocus,
   } = useContext(HeaderContext);
 
+  const router = useRouter();
+
   return (
     <div className="fixed top-0 flex items-center w-full h-16 px-6 shadow-md">
-      <Image alt="" src={Images.logo} />
+      <Image
+        alt=""
+        src={Images.logo}
+        onClick={() => router.push("/")}
+        className="cursor-pointer"
+      />
       <div className="flex justify-center w-full h-full">
         <div
           ref={usersearchlistRef}
@@ -52,7 +58,9 @@ const HeaderContainer = () => {
               className={clsx(
                 "container-conversation flex flex-col gap-2 justify-center w-full py-2 max-h-96 bg-white rounded-md  drop-shadow-md",
                 valuedelaytime ? "items-start" : "items-center",
-                filteritemsconversation![0] === undefined && "items-center"
+                filteritemsconversation &&
+                  filteritemsconversation[0]?.type === "h2" &&
+                  "items-center"
               )}
             >
               {!valuedelaytime ? (
@@ -73,12 +81,16 @@ export const ChatSelection = ({
   photoURL,
   name,
   userName,
+  email,
 }: {
-  index: number;
+  index: string;
   photoURL: string;
   name: string;
   userName: string;
+  email: string;
 }) => {
+  const { AddConversation } = useContext(HeaderContext);
+
   return (
     <div
       key={index}
@@ -93,7 +105,10 @@ export const ChatSelection = ({
           </span>
         </div>
       </div>
-      <div className="flex items-center invisible p-1 px-2 mr-2 font-medium text-gray-800 transition-all rounded-md cursor-pointer group-hover/item:visible hover:scale-105 hover:bg-indigo-400 group/items">
+      <div
+        onClick={() => AddConversation(email)}
+        className="flex items-center invisible p-1 px-2 mr-2 font-medium text-gray-800 transition-all rounded-md cursor-pointer group-hover/item:visible hover:scale-105 hover:bg-indigo-400 group/items"
+      >
         <span className="block w-full pr-1 text-xs group-hover/items:text-white">
           Add Conversations
         </span>

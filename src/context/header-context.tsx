@@ -1,7 +1,9 @@
 import { InfomationUser } from "@/components/constants/select-options";
-import { useGetUserNameList } from "@/hooks/useAuth";
+import { dbg } from "@/firebase";
+import { useAddConVersation, useGetUserNameList } from "@/hooks/useAuth";
 import { useClickOutSide } from "@/hooks/useClickOutSide";
 import { ChatSelection } from "@/pages/layouts/header/header";
+import { collection, getDocs, query, where } from "firebase/firestore";
 import {
   Dispatch,
   ReactNode,
@@ -13,7 +15,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { AuthContext } from "./auth-context";
+import { AppContext } from "./app-context";
 
 interface HeaderContextProps {
   valuesearch: string;
@@ -24,8 +26,8 @@ interface HeaderContextProps {
   usersearchlist: boolean;
   usersearchlistRef: RefObject<HTMLDivElement>;
   onFocus: () => void;
-  _handleCheckItemConversation: () => boolean;
-  filteritemsconversation: (JSX.Element | undefined)[] | undefined;
+  filteritemsconversation: (JSX.Element | null)[] | undefined;
+  AddConversation: (recipientEmail: string) => void;
 }
 
 export const HeaderContext = createContext({} as HeaderContextProps);
@@ -35,9 +37,10 @@ export const HeaderProvider = ({ children }: { children: ReactNode }) => {
   const [valuedelaytime, setValueDelayTime] = useState("");
   const [usersearchlist, setUserSearchList] = useState(true);
   const [filteritemsconversation, setFilterItemsConversation] =
-    useState<(JSX.Element | undefined)[]>();
+    useState<(JSX.Element | null)[]>();
   const inputref = useRef<HTMLInputElement>(null);
-  const { loggedInUser } = useContext(AuthContext);
+  const { loggedInUser, infousersidebar, setIsMounted } =
+    useContext(AppContext);
 
   useEffect(() => {
     if (valuesearch !== valuedelaytime && valuedelaytime) {
@@ -54,42 +57,54 @@ export const HeaderProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const handle = async () => {
+      setFilterItemsConversation([]);
       if (valuedelaytime) {
         const value: [] = await useGetUserNameList();
         let count = 0;
-        setFilterItemsConversation([]);
-        const filteredItems = value?.map((item: InfomationUser, index) => {
-          if (
-            item.userName.includes(valuedelaytime) &&
-            item.email !== loggedInUser?.email
-          ) {
-            count++;
-            return (
-              <ChatSelection
-                key={index}
-                index={index}
-                name={item.name}
-                photoURL={item.photoURL}
-                userName={item.userName}
-              />
-            );
-          }
-        });
-        if (count === 0)
+        let filteredItems = await Promise.all(
+          value?.map(async (item: string) => {
+            if (
+              item.includes(valuedelaytime) &&
+              item !== infousersidebar.username
+            ) {
+              const queryRef = query(
+                collection(dbg, "users"),
+                where("userName", "==", item)
+              );
+              const infomationUser = (
+                await getDocs(queryRef)
+              ).docs[0].data() as InfomationUser;
+              count++;
+              return (
+                <ChatSelection
+                  key={infomationUser.id}
+                  index={infomationUser.id}
+                  name={infomationUser.name}
+                  photoURL={infomationUser.photoURL}
+                  userName={infomationUser.userName}
+                  email={infomationUser.email}
+                />
+              );
+            }
+            return null;
+          })
+        );
+        if (count === 0) {
+          filteredItems = [];
           filteredItems.push(<h2 key="no-results">No results were found</h2>);
+        }
         setFilterItemsConversation(filteredItems);
       }
     };
     handle();
   }, [valuedelaytime]);
 
-  const _handleCheckItemConversation = () => {
-    const myDiv = document
-      .querySelector(".container-conversation")
-      ?.querySelector(".item-conversation");
-    const item = myDiv?.querySelector(".item-conversation");
-    if (item) return true;
-    else return false;
+  const AddConversation = (recipientEmail: string) => {
+    if (loggedInUser?.email) {
+      useAddConVersation(loggedInUser.email, recipientEmail).then(() => {
+        setIsMounted(true);
+      });
+    }
   };
 
   const onFocus = () => {
@@ -109,8 +124,8 @@ export const HeaderProvider = ({ children }: { children: ReactNode }) => {
     usersearchlist,
     usersearchlistRef,
     onFocus,
-    _handleCheckItemConversation,
     filteritemsconversation,
+    AddConversation,
   };
   return (
     <HeaderContext.Provider value={value}>{children}</HeaderContext.Provider>

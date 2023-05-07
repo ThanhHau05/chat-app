@@ -1,4 +1,4 @@
-import { AuthContext, AuthProvider } from "@/context/auth-context";
+import { AppContext, AppProvider } from "@/context/app-context";
 import "@/styles/globals.css";
 import type { AppProps } from "next/app";
 
@@ -7,18 +7,18 @@ import { useContext } from "react";
 
 const MyApp = ({ Component, pageProps }: AppProps) => {
   return (
-    <AuthProvider>
+    <AppProvider>
       <App pageProps={pageProps} Component={Component} />
-    </AuthProvider>
+    </AppProvider>
   );
 };
 
 const App = ({ Component, pageProps }: any) => {
-  const { loadingprivate, infouser } = useContext(AuthContext);
+  const { loadingprivate, infousersidebar } = useContext(AppContext);
 
   return (
     <div>
-      {loadingprivate && !infouser.name && <SimpleLoading />}
+      {loadingprivate && !infousersidebar.name && <SimpleLoading />}
       <Component {...pageProps} />
     </div>
   );

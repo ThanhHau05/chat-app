@@ -1,6 +1,10 @@
-import { DROP_PROFILE_OPTIONS } from "@/components/constants/select-options";
+import {
+  DROP_PROFILE_OPTIONS,
+  InfomationUser,
+} from "@/components/constants/select-options";
 import { SimpleInput } from "@/components/input";
-import { AuthContext } from "@/context/auth-context";
+import { SimpleMessagePerson } from "@/components/message-person";
+import { AppContext } from "@/context/app-context";
 import { SideBarContext, SideBarProvider } from "@/context/sidebar-context";
 import { Images } from "@/images";
 import clsx from "clsx";
@@ -22,13 +26,16 @@ const SideBar = () => {
 export default SideBar;
 
 const _SideBarContainer = () => {
-  const { input, setInput, inputRef } = useContext(SideBarContext);
+  const { input, setInput, inputRef, messagerinfomation } =
+    useContext(SideBarContext);
+  const { valueusernameandtitle, setValueUserNameAndTitle } =
+    useContext(AppContext);
 
   return (
     <div className="h-full bg-white border-r-2 w-[344px]">
       <_UserChat />
-      <div className="w-full h-[calc(100%-80px)] pl-6">
-        <div className="w-full pr-3">
+      <div className="w-full h-[calc(100%-80px)]">
+        <div className="w-full pl-6 pr-3">
           <SimpleInput
             Icon={GrSearch}
             setCurrentValue={setInput}
@@ -37,7 +44,7 @@ const _SideBarContainer = () => {
             width="w-full"
           />
         </div>
-        <div className="py-3">
+        <div className="py-3 pl-6">
           <div className="relative inline-block px-2 py-1 transition-all duration-200 border rounded-full cursor-pointer hover:bg-indigo-400 hover:drop-shadow-lg bg-slate-100 drop-shadow-md group">
             <h2 className="text-sm drop-shadow-md group-hover:text-white">
               Message waiting
@@ -47,33 +54,55 @@ const _SideBarContainer = () => {
             </span> */}
           </div>
         </div>
+        {messagerinfomation ? (
+          messagerinfomation?.map((item, index) => {
+            const items = item.data() as InfomationUser;
+            return (
+              <SimpleMessagePerson
+                key={index}
+                name={items.name}
+                avatar={items.photoURL}
+                data={items}
+                userName={valueusernameandtitle.username}
+              />
+            );
+          })
+        ) : (
+          <div className="w-full h-20 px-6">
+            <_LoadingSkeletonUser />
+          </div>
+        )}
       </div>
     </div>
   );
 };
 
 const _UserChat = () => {
-  const { loggedInUser, infouser, onSignOut } = useContext(AuthContext);
+  const { infousersidebar, onSignOut } = useContext(AppContext);
   const { profileoption, setProfileOption, onClickProfileOption, listRef } =
     useContext(SideBarContext);
 
   return (
     <div className="flex w-full h-20 pl-6 pr-3">
-      {!infouser.photoUrl ? (
+      {!infousersidebar.photoUrl ? (
         <_LoadingSkeletonUser />
       ) : (
         <div className="flex items-center w-full">
           <img
             alt=""
-            src={infouser.photoUrl ? infouser.photoUrl : Images.user.src}
+            src={
+              infousersidebar.photoUrl
+                ? infousersidebar.photoUrl
+                : Images.user.src
+            }
             className="border-2 border-indigo-900 rounded-full h-14 w-14 drop-shadow-sm"
           />
           <div className="flex items-center justify-between w-full h-full py-3 pl-2">
             <div className="w-full">
               <h2 className="w-full overflow-hidden font-medium text-indigo-900 drop-shadow-sm whitespace-nowrap text-ellipsis">
-                {infouser.name}
+                {infousersidebar.name}
               </h2>
-              <span className="text-sm">@{infouser.username}</span>
+              <span className="text-sm">@{infousersidebar.username}</span>
             </div>
             <div className="flex items-center gap-2 text-gray-900">
               <div className="flex justify-center">
@@ -119,8 +148,18 @@ const _LoadingSkeletonUser = () => {
         )}
       ></div>
       <div className="flex w-[calc(100%-56px)] h-full pl-2 py-3 flex-col gap-2">
-        <div className={clsx("w-3/4 h-2/4 rounded-sm", styles.skeleton)}></div>
-        <div className={clsx("w-2/4 h-2/4 rounded-sm", styles.skeleton)}></div>
+        <div
+          className={clsx(
+            "w-3/4 h-2/4 rounded-sm drop-shadow-md",
+            styles.skeleton
+          )}
+        ></div>
+        <div
+          className={clsx(
+            "w-2/4 h-2/4 rounded-sm drop-shadow-md",
+            styles.skeleton
+          )}
+        ></div>
       </div>
     </div>
   );
